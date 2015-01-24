@@ -1,32 +1,44 @@
-package main
+package sensor
 
 // vim:ts=4
 
 import (
-	"fmt"
+	"log"
 	"syscall"
 	"unsafe"
 )
 
-func WindowTitle() string {
-	user32 := syscall.MustLoadDLL("user32.dll")
-	getForegroundWindow := user32.MustFindProc("GetForegroundWindow")
-	getWindowText := user32.MustFindProc("GetWindowTextA")
-	// or you can handle the errors in the above if you want to provide some alternative
-	r1, _, err := getForegroundWindow.Call()
-	// err will always be non-nil; you need to check r1 (the return value)
-	if r1 == 0 { // in this case
-		panic("error getting foreground window handle: " + err.Error())
-	}
-	var buffer [256]byte
-	r2, _, err := getWindowText.Call(r1, uintptr(unsafe.Pointer(&buffer)), uintptr(256))
-	if r2 == 0 {
-		return ""
-	}
-	// fmt.Printf("%v\n", buffer)
-	return string(buffer[:r2])
+type HWND uintptr
+
+var user32 *syscall.DLL
+var getForegroundWindow_W32, getWindowText_W32 *syscall.Proc
+var testHandle HWND
+
+func init() {
+	user32 = syscall.MustLoadDLL("user32.dll")
+	getForegroundWindow_W32 = user32.MustFindProc("GetForegroundWindow")
+	getWindowText_W32 = user32.MustFindProc("GetWindowTextA")
 }
 
-func main() {
-	fmt.Printf("Hello, world.\n")
+func getForegroundWindow() HWND {
+	if testHandle != 0 {
+		return testHandle
+	}
+	windowHandle, _, err := getForegroundWindow_W32.Call()
+	if windowHandle == 0 {
+		panic("error getting foreground window handle: " + err.Error())
+	}
+	log.Printf("windowHandle is %v\n", windowHandle)
+	return HWND(windowHandle)
+}
+
+func WindowTitle() string {
+	// or you can handle the errors in the above if you want to provide some alternative
+	windowHandle := getForegroundWindow()
+	var buffer [256]byte
+	windowTitleLen, _, _ := getWindowText_W32.Call(uintptr(windowHandle), uintptr(unsafe.Pointer(&buffer)), uintptr(256))
+	if windowTitleLen == 0 {
+		return ""
+	}
+	return string(buffer[:windowTitleLen])
 }
