@@ -11,11 +11,11 @@ import (
 func TestWindowTitle(t *testing.T) {
 	Convey("Get the current window title", t, func() {
 		title := WindowTitle()
-		expected := "lmcdell || ~/src/goget/src/github.com/gophergala/panopticon/server"
-		Convey("titles should match", func() {
+		expected := "lmcdell || ~/src/goget/src/github.com/gophergala/panopticon/sensor"
+		Convey("Titles should match", func() {
 			So(title, ShouldEqual, expected)
 		})
-		Convey("lengths should match", func() {
+		Convey("Lengths should match", func() {
 			So(len(title), ShouldEqual, len(expected))
 		})
 	})
