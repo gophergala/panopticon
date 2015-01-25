@@ -40,18 +40,20 @@ func TestGetLastInputInfo(t *testing.T) {
 	})
 }
 
-// Not sure how to test this, either.  I guess, just make sure it's non-zero?
+// Not sure how to test this, either.  I guess, just make sure it's non-zero,
+// too?  Which of course will fail if you run the test with the mouse in the
+// upper left corner of the screen.
 func TestGetMouseMovePointsEx(t *testing.T) {
-	Convey("Get the mouse position history", t, func() {
-		if mouseHist, err := GetMouseMovePointsEx(); err != nil {
+	Convey("Get the mouse position", t, func() {
+		if pos, err := GetCursorPos(); err != nil {
 			So(err, ShouldBeNil) // obviously an automatic failure
 		} else {
-			log.Printf("Mouse pos is %v", mouseHist)
+			// log.Printf("Mouse pos is %v", pos)
 			Convey("Mouse pos x is non-zero", func() {
-				So(mouseHist.X, ShouldBeGreaterThan, 0)
+				So(pos.X, ShouldBeGreaterThan, 0)
 			})
 			Convey("Mouse pos y is non-zero", func() {
-				So(mouseHist.Y, ShouldBeGreaterThan, 0)
+				So(pos.Y, ShouldBeGreaterThan, 0)
 			})
 		}
 	})

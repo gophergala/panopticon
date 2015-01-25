@@ -4,7 +4,6 @@ package sensor
 
 import (
 	"errors"
-	"fmt"
 	"log"
 	"syscall"
 	"unsafe"
@@ -18,18 +17,24 @@ type LastInputInfo struct {
 	dwTime TickCount
 }
 
+// Might be wrong.  Not tested.
 type MouseMovePoint struct {
 	X, Y        int
 	Time        DWORD // should be TickCount?
 	dwExtraInfo *uint32
 }
 
+type LONG int32
+type Point struct {
+	X, Y LONG
+}
+
 var (
-	user32                   = syscall.MustLoadDLL("user32.dll")
-	getForegroundWindow_W32  = user32.MustFindProc("GetForegroundWindow")
-	getWindowText_W32        = user32.MustFindProc("GetWindowTextW")
-	getLastInputInfo_W32     = user32.MustFindProc("GetLastInputInfo")
-	getMouseMovePointsEx_W32 = user32.MustFindProc("GetMouseMovePointsEx")
+	user32                  = syscall.MustLoadDLL("user32.dll")
+	getForegroundWindow_W32 = user32.MustFindProc("GetForegroundWindow")
+	getWindowText_W32       = user32.MustFindProc("GetWindowTextW")
+	getLastInputInfo_W32    = user32.MustFindProc("GetLastInputInfo")
+	getCursorPos_W32        = user32.MustFindProc("GetCursorPos")
 )
 var testHandle HWND
 
@@ -67,23 +72,11 @@ func GetLastInputInfo() (TickCount, error) {
 	return lastInputInfo.dwTime, nil
 }
 
-var dummyMMP = MouseMovePoint{}
-
-const (
-	GMMP_USE_DISPLAY_POINTS = iota + 1
-	GMMP_USE_HIGH_RESOLUTION_POINTS
-)
-
-func GetMouseMovePointsEx() (*MouseMovePoint, error) {
-	fakeMMP := MouseMovePoint{2201, 0, 0, nil}
-	resultMMP := new([32]MouseMovePoint)
-	rcPtr, _, _ := getMouseMovePointsEx_W32.Call(uintptr(unsafe.Sizeof(dummyMMP)),
-		uintptr(unsafe.Pointer(&fakeMMP)),
-		uintptr(unsafe.Pointer(&resultMMP[0])),
-		32, GMMP_USE_DISPLAY_POINTS)
-	rc := int32(rcPtr)
-	if rc == -1 || rc != 1 {
-		return nil, errors.New(fmt.Sprintf("No position returned (%d != 1)", rc))
+func GetCursorPos() (*Point, error) {
+	res := Point{}
+	b, _, _ := getCursorPos_W32.Call(uintptr(unsafe.Pointer(&res)))
+	if int32(b) == 0 {
+		return nil, errors.New("No mouse pos available")
 	}
-	return &resultMMP[0], nil
+	return &res, nil
 }
