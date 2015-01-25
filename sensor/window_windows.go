@@ -1,10 +1,9 @@
-package sensor
+package main
 
 // vim:ts=4
 
 import (
 	"errors"
-	"log"
 	"syscall"
 	"unsafe"
 )
@@ -35,6 +34,9 @@ var (
 	getWindowText_W32       = user32.MustFindProc("GetWindowTextW")
 	getLastInputInfo_W32    = user32.MustFindProc("GetLastInputInfo")
 	getCursorPos_W32        = user32.MustFindProc("GetCursorPos")
+
+	kernel32         = syscall.MustLoadDLL("kernel32.dll")
+	getTickCount_W32 = kernel32.MustFindProc("GetTickCount")
 )
 var testHandle HWND
 
@@ -46,7 +48,7 @@ func getForegroundWindow() HWND {
 	if windowHandle == 0 {
 		panic("error getting foreground window handle: " + err.Error())
 	}
-	log.Printf("windowHandle is %v\n", windowHandle)
+	// log.Printf("windowHandle is %v\n", windowHandle)
 	return HWND(windowHandle)
 }
 
@@ -66,7 +68,7 @@ func GetLastInputInfo() (TickCount, error) {
 	lastInputInfo := LastInputInfo{}
 	lastInputInfo.cbSize = uint32(unsafe.Sizeof(lastInputInfo))
 	rc, _, _ := getLastInputInfo_W32.Call(uintptr(unsafe.Pointer(&lastInputInfo)))
-	if int(rc) == 0 {
+	if int32(rc) == 0 {
 		return 0, errors.New("No time returned")
 	}
 	return lastInputInfo.dwTime, nil
@@ -79,4 +81,9 @@ func GetCursorPos() (*Point, error) {
 		return nil, errors.New("No mouse pos available")
 	}
 	return &res, nil
+}
+
+func GetTickCount() TickCount {
+	ticks, _, _ := getTickCount_W32.Call()
+	return TickCount(ticks)
 }

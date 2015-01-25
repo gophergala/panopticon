@@ -12,21 +12,22 @@ import (
 	"testing"
 	"time"
 
+	"github.com/gophergala/panopticon/entry"
+
 	"appengine"
 	"appengine/aetest"
 	"appengine/datastore"
-	"appengine/user"
 )
 
 var now = time.Now().Round(time.Millisecond)
 var sampleUser = "lmc"
 var idle = 10 * time.Second
-var sampleEntry = Entry{
+var sampleEntry = entry.Entry{
 	Time:    now,
 	WasIdle: true,
 	Idle:    idle,
-	App:     "Chrome",
-	Title:   "localhost"}
+	// App:     "Chrome",
+	Title: "localhost"}
 
 var inst aetest.Instance
 
@@ -47,16 +48,16 @@ func TestAddEntry(t *testing.T) {
 	}
 
 	c := appengine.NewContext(req)
-	entry, err := AddEntry(c, sampleUser, &sampleEntry)
+	entryKey, err := AddEntry(c, sampleUser, &sampleEntry)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	var e Entry
-	if err := datastore.Get(c, entry, &e); err != nil {
+	var e entry.Entry
+	if err := datastore.Get(c, entryKey, &e); err != nil {
 		t.Fatal(err)
 	}
-	if e.Time != now || e.WasIdle != true || e.Idle != idle || e.App != "Chrome" || e.Title != "localhost" {
+	if e.Time != now || e.WasIdle != true || e.Idle != idle /* || e.App != "Chrome" */ || e.Title != "localhost" {
 		t.Fatal(errors.New(fmt.Sprintf("Wrong entry returned: stored this: \n%v\ngot this: \n%v", sampleEntry, e)))
 	}
 }
@@ -67,12 +68,12 @@ func TestApiAddEntry(t *testing.T) {
 		t.Fatalf("Couldn't marshal sampleEntry: %v", err)
 	}
 	req, err := inst.NewRequest("PUT",
-		"http://i-dont-remember.appspot.com/api/v1/add_entry",
+		"http://plexiform-leaf-835.appspot.com/api/v1/add_entry",
 		bytes.NewBuffer(jsonSampleEntry))
 	if err != nil {
 		t.Fatalf("Failed to create req: %v", err)
 	}
-	aetest.Login(&user.User{Email: "larry@theclapp.org"}, req)
+	req.Header.Set("X-Panopticon-Token", "larry@theclapp.org")
 
 	w := httptest.NewRecorder()
 	apiAddEntry(w, req)
@@ -93,6 +94,7 @@ func TestApiAddEntry(t *testing.T) {
 // 	defer c.Close()
 // }
 
+// Not really a test, just runs last.
 func TestShutdown(t *testing.T) {
 	inst.Close()
 }

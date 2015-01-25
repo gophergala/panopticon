@@ -1,10 +1,11 @@
-package sensor
+package main
 
-// vim:ts=4
+// vim:sw=4:ts=4
 
 import (
 	"log"
 	"testing"
+	"time"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -43,7 +44,7 @@ func TestGetLastInputInfo(t *testing.T) {
 // Not sure how to test this, either.  I guess, just make sure it's non-zero,
 // too?  Which of course will fail if you run the test with the mouse in the
 // upper left corner of the screen.
-func TestGetMouseMovePointsEx(t *testing.T) {
+func TestGetCursorPos(t *testing.T) {
 	Convey("Get the mouse position", t, func() {
 		if pos, err := GetCursorPos(); err != nil {
 			So(err, ShouldBeNil) // obviously an automatic failure
@@ -56,5 +57,37 @@ func TestGetMouseMovePointsEx(t *testing.T) {
 				So(pos.Y, ShouldBeGreaterThan, 0)
 			})
 		}
+	})
+}
+
+func TestMakeEntry(t *testing.T) {
+	testHandle = 3278308
+	Convey("Make an entry", t, func() {
+		e, err := MakeEntry()
+		log.Printf("e is %v", *e)
+		Convey("Got an entry", func() {
+			So(err, ShouldBeNil)
+		})
+		if err == nil {
+			// There's a race condition here: the returned Entry uses time.Now(); the
+			// time.Now() *now* is going to be later.  Mitigate (or totally avoid?) this
+			// by rounding to the nearest second.
+			Convey("times match", func() {
+				t1 := e.Time.Round(time.Second)
+				t2 := time.Now().Round(time.Second)
+				// Comparing them directly didn't work even when they were equal, so stringify them.
+				So(t1.String(), ShouldEqual, t2.String())
+			})
+			Convey("Titles match", func() {
+				So(e.Title, ShouldEqual, "~")
+			})
+		}
+	})
+}
+
+func TestGetTickCount(t *testing.T) {
+	Convey("Get the tick count", t, func() {
+		tc := GetTickCount()
+		So(tc, ShouldBeGreaterThan, 0)
 	})
 }
