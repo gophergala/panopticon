@@ -3,6 +3,7 @@ package sensor
 // vim:ts=4
 
 import (
+	"log"
 	"testing"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -22,5 +23,36 @@ func TestWindowTitle(t *testing.T) {
 		Convey("Lengths should match", func() {
 			So(len(title), ShouldEqual, len(expected))
 		})
+	})
+}
+
+// Not sure how to test this.  I guess, just make sure it's non-zero?
+func TestGetLastInputInfo(t *testing.T) {
+	Convey("Get tick count of the most recent keyboard activity", t, func() {
+		if ticks, err := GetLastInputInfo(); err != nil {
+			So(err, ShouldBeNil) // obviously an automatic failure
+		} else {
+			Convey("tick count is non-zero", func() {
+				log.Printf("GetLastInputInfo is %v", ticks)
+				So(ticks, ShouldBeGreaterThan, 0)
+			})
+		}
+	})
+}
+
+// Not sure how to test this, either.  I guess, just make sure it's non-zero?
+func TestGetMouseMovePointsEx(t *testing.T) {
+	Convey("Get the mouse position history", t, func() {
+		if mouseHist, err := GetMouseMovePointsEx(); err != nil {
+			So(err, ShouldBeNil) // obviously an automatic failure
+		} else {
+			log.Printf("Mouse pos is %v", mouseHist)
+			Convey("Mouse pos x is non-zero", func() {
+				So(mouseHist.X, ShouldBeGreaterThan, 0)
+			})
+			Convey("Mouse pos y is non-zero", func() {
+				So(mouseHist.Y, ShouldBeGreaterThan, 0)
+			})
+		}
 	})
 }
