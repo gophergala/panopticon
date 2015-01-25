@@ -1,5 +1,8 @@
 package main
 
+// Panopticon, Copyright © 2015, Huck Ridge Software LLC
+// All rights reserved.
+
 import (
 	"bytes"
 	"encoding/json"
