@@ -5,21 +5,26 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+	"os"
 	"time"
 )
 
 // vim:sw=4:ts=4
 
 func main() {
+	if len(os.Args) < 2 {
+		log.Fatalf("Usage: sensor your_email_address")
+	}
+	user := os.Args[1]
 	client := http.Client{}
 
-	sendEntry(client)
+	sendEntry(client, user)
 	for _ = range time.Tick(15 * time.Second) {
-		sendEntry(client)
+		sendEntry(client, user)
 	}
 }
 
-func sendEntry(client http.Client) {
+func sendEntry(client http.Client, user string) {
 	e, err := MakeEntry()
 	if err != nil {
 		log.Fatalf("MakeEntry: %v", err)
@@ -35,7 +40,7 @@ func sendEntry(client http.Client) {
 	if err != nil {
 		log.Fatalf("Failed to create req: %v", err)
 	}
-	req.Header.Set("X-Panopticon-Token", "larry@theclapp.org")
+	req.Header.Set("X-Panopticon-Token", user)
 
 	resp, err := client.Do(req)
 	if err != nil {

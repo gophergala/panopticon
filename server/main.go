@@ -20,7 +20,27 @@ const numEntries = 30
 
 func init() {
 	http.HandleFunc("/", Root)
+	http.HandleFunc("/logout", Logout)
 	http.HandleFunc("/api/v1/add_entry", apiAddEntry)
+}
+
+func Logout(w http.ResponseWriter, r *http.Request) {
+	c := appengine.NewContext(r)
+	c.Infof("Logout")
+	var u *user.User
+	var url string
+	var err error
+	if u = user.Current(c); u == nil {
+		url, err = user.LoginURL(c, r.URL.String())
+	} else {
+		url, err = user.LogoutURL(c, "/")
+	}
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Location", url)
+	w.WriteHeader(http.StatusFound)
 }
 
 func userKey(token string, c appengine.Context) *datastore.Key {
@@ -88,6 +108,14 @@ var homeTemplate = template.Must(template.New("entry").Parse(`
 	  	<td>{{.Title}}</td>
 	  </tr>
     {{end}}
+	</table>
+	<a href="/logout">
+		<button name="logout">Logout</button>
+	</a>
+	<div>
+		Panopticon is a project for the 2015 Gopher Gala by
+		<a href="https://twitter.com/readcodesing">Larry Clapp</a>
+	</div>
   </body>
 </html>
 `))
