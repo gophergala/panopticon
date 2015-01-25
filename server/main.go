@@ -29,7 +29,7 @@ type Greeting struct {
 
 func init() {
 	http.HandleFunc("/", Root)
-	http.HandleFunc("/add_entry", sign)
+	http.HandleFunc("/api/v1/add_entry", apiAddEntry)
 }
 
 // guestbookKey returns the key used for all guestbook entries.
@@ -131,7 +131,7 @@ func AddEntry(c appengine.Context, user string, e *Entry) (*datastore.Key, error
 	}
 }
 
-func add_entry(w http.ResponseWriter, r *http.Request) {
+func apiAddEntry(w http.ResponseWriter, r *http.Request) {
 	c := appengine.NewContext(r)
 	var u *user.User
 	if u = user.Current(c); u == nil {
@@ -152,10 +152,12 @@ func add_entry(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	_, err = AddEntry(c, u.String(), &entry)
+	// log.Printf("Adding %v", entry)
+	newKey, err := AddEntry(c, u.String(), &entry)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+	w.Header().Add("Location", newKey.Encode())
 	return
 }
