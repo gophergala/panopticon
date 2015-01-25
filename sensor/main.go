@@ -36,6 +36,10 @@ func sendEntry() {
 	if err != nil {
 		log.Fatalf("MakeEntry: %v", err)
 	}
+	if e.WasIdle && e.Idle > CONSIDERED_IDLE {
+		log.Printf("WasIdle & idletime = %v; not sending an update", e.Idle)
+		return
+	}
 
 	jsonSampleEntry, err := json.Marshal(&e)
 	if err != nil {
@@ -60,6 +64,7 @@ func sendEntry() {
 		if _, ok := resp.Header["Location"]; !ok {
 			log.Fatalf("No Location header in the response")
 		}
-		log.Printf("Response: %v", resp)
+		log.Printf("Sent %v", e)
+		// log.Printf("Response: %v", resp)
 	}
 }

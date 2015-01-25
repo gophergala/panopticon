@@ -10,6 +10,9 @@ import (
 
 var prevMousePos Point
 var lastMouseMovement = time.Now()
+var wasIdle = false
+
+const CONSIDERED_IDLE = 60
 
 func MakeEntry() (*entry.Entry, error) {
 	mousePos, err := GetCursorPos()
@@ -32,10 +35,13 @@ func MakeEntry() (*entry.Entry, error) {
 	if kbdIdleTime < mouseIdleTime {
 		idle = kbdIdleTime
 	}
+	idleTime := time.Duration(idle * time.Millisecond)
+	isIdle := idleTime > CONSIDERED_IDLE
 	e := entry.Entry{
 		Time:    time.Now(),
-		WasIdle: false,
-		Idle:    time.Duration(idle * time.Millisecond),
+		WasIdle: wasIdle,
+		Idle:    idleTime,
 		Title:   WindowTitle()}
+	wasIdle = isIdle
 	return &e, nil
 }
