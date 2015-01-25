@@ -3,6 +3,8 @@ package server
 // vim:sw=4:ts=4
 
 import (
+	"encoding/json"
+	"errors"
 	"html/template"
 	"net/http"
 	"time"
@@ -12,6 +14,13 @@ import (
 	"appengine/user"
 )
 
+type Entry struct {
+	Time       time.Time
+	WasIdle    bool
+	Idle       time.Duration
+	App, Title string
+}
+
 type Greeting struct {
 	Author  string
 	Content string
@@ -19,8 +28,8 @@ type Greeting struct {
 }
 
 func init() {
-	http.HandleFunc("/", root)
-	http.HandleFunc("/sign", sign)
+	http.HandleFunc("/", Root)
+	http.HandleFunc("/add_entry", sign)
 }
 
 // guestbookKey returns the key used for all guestbook entries.
@@ -29,7 +38,7 @@ func guestbookKey(c appengine.Context) *datastore.Key {
 	return datastore.NewKey(c, "Guestbook", "default_guestbook", 0, nil)
 }
 
-func root(w http.ResponseWriter, r *http.Request) {
+func Root(w http.ResponseWriter, r *http.Request) {
 	c := appengine.NewContext(r)
 
 	if u := user.Current(c); u == nil {
@@ -110,4 +119,43 @@ func sign(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	http.Redirect(w, r, "/", http.StatusFound)
+}
+
+func AddEntry(c appengine.Context, user string, e *Entry) (*datastore.Key, error) {
+	userKey := datastore.NewKey(c, "User", user, 0, nil)
+	entryPartialKey := datastore.NewKey(c, "Entry", "", 0, userKey)
+	if newEntryKey, err := datastore.Put(c, entryPartialKey, e); err != nil {
+		return nil, errors.New("Could not put the entry")
+	} else {
+		return newEntryKey, nil
+	}
+}
+
+func add_entry(w http.ResponseWriter, r *http.Request) {
+	c := appengine.NewContext(r)
+	var u *user.User
+	if u = user.Current(c); u == nil {
+		url, err := user.LoginURL(c, r.URL.String())
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		w.Header().Set("Location", url)
+		w.WriteHeader(http.StatusFound)
+		return
+	}
+	// g.Author = u.String()
+	decoder := json.NewDecoder(r.Body)
+	var entry Entry
+	err := decoder.Decode(&entry)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	_, err = AddEntry(c, u.String(), &entry)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	return
 }
