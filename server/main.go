@@ -72,10 +72,12 @@ func Root(w http.ResponseWriter, r *http.Request) {
 	for i := 0; i < len(entries)/2; i++ {
 		entries[i], entries[len(entries)-i-1] = entries[len(entries)-i-1], entries[i]
 	}
-	for _, e := range entries {
-		e.Time = e.Time.Round(10 * time.Millisecond)
+	for i, _ := range entries {
+		entries[i].Time = entries[i].Time.Round(10 * time.Millisecond)
 	}
-	if err := homeTemplate.Execute(w, entries); err != nil {
+	if err := homeTemplate.Execute(w, map[string]interface{}{
+		"User":    u.Email,
+		"Entries": entries}); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -93,6 +95,9 @@ var homeTemplate = template.Must(template.New("entry").Parse(`
 	</style>
   </head>
   <body>
+    <div>
+		You are logged in as {{.User}}
+	</div>
   	<table>
 	  <tr>
 	    <th>Time</th>
@@ -100,7 +105,7 @@ var homeTemplate = template.Must(template.New("entry").Parse(`
 		<th>Idle Time (ms)</th>
 		<th>Window title</th>
 	  </tr>
-    {{range .}}
+    {{range .Entries}}
 	  <tr>
 	  	<td>{{.Time}}</td>
 	  	<td>{{.WasIdle}}</td>

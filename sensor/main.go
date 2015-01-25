@@ -11,20 +11,27 @@ import (
 
 // vim:sw=4:ts=4
 
+var user, server string
+var client = http.Client{}
+
 func main() {
 	if len(os.Args) < 2 {
-		log.Fatalf("Usage: sensor your_email_address")
+		log.Fatalf("Usage: sensor your_email_address [server_url]")
 	}
-	user := os.Args[1]
-	client := http.Client{}
+	user = os.Args[1]
 
-	sendEntry(client, user)
+	server = "plexiform-leaf-835.appspot.com"
+	if len(os.Args) >= 3 {
+		server = os.Args[2]
+	}
+
+	sendEntry()
 	for _ = range time.Tick(15 * time.Second) {
-		sendEntry(client, user)
+		sendEntry()
 	}
 }
 
-func sendEntry(client http.Client, user string) {
+func sendEntry() {
 	e, err := MakeEntry()
 	if err != nil {
 		log.Fatalf("MakeEntry: %v", err)
@@ -35,7 +42,7 @@ func sendEntry(client http.Client, user string) {
 		log.Fatalf("Couldn't marshal sampleEntry: %v", err)
 	}
 	req, err := http.NewRequest("PUT",
-		"http://localhost:8081/api/v1/add_entry",
+		"http://"+server+"/api/v1/add_entry",
 		bytes.NewBuffer(jsonSampleEntry))
 	if err != nil {
 		log.Fatalf("Failed to create req: %v", err)
