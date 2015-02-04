@@ -1,3 +1,3 @@
 Panopticon
 
-See https://docs.google.com/document/d/1NPsKcV_RiUxC6brSzOAglJBd4t3bM3GlS7MIDPX8xkc or my ChallengePost submission. The repo was private so I didn't put much here, and now I'm out of time on a plane. :)
+This was the repo for my entry into the 2015 Gopher Gala.  This repository is no longer under active development.  Please see https://github.com/theclapp/panopticon for further details and updates, including links to my ChallengePost entry and related details.
